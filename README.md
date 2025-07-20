@@ -30,6 +30,8 @@ Enjoy pixel-perfect movement, food pickups, score tracking, sounds, and support 
 
 ---
 
+[![Watch the video](https://img.youtube.com/vi/EVg6gi0o9Ds/0.jpg)](https://www.youtube.com/watch?v=EVg6gi0o9Ds)
+
 ## 💻 Run on Desktop (Windows/Linux)
 
 ### 1. Clone the repo:
