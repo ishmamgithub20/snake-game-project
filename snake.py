@@ -14,7 +14,7 @@ import os
 randint = random.randint
 
 class GameWidget(Widget):
-    def __init__(self, winx, winy, grid_size=10):
+    def __init__(self, winx, winy, grid_size=10):  # Initializes all about snake and environment (sound effects)
         super().__init__()
 
         self.winx, self.winy = winx, winy
@@ -47,7 +47,7 @@ class GameWidget(Widget):
 
         print("Window size: ", Window.size)
 
-    def __init__local(self):
+    def __init__local(self):  # Initializes snake variables when starting a new born snake
         random.seed(time.time())  # Initialize random seed
         angle = randint(0, 3) * math.pi / 2
         self.direction = (round(math.cos(angle)), round(math.sin(angle)))
@@ -67,26 +67,26 @@ class GameWidget(Widget):
 
         self.executed =  True
     
-    def increase_update_time(self, df):
+    def increase_update_time(self, df):  # adjust snake 🐍 speed to make game more enjoying 
         self.update_time *= 0.9
         # Clock.unschedule(self.update)
         self.update_timer.cancel()
         self.update_timer = Clock.schedule_interval(self.update, self.update_time)
 
-    def set_score_label(self, label):
+    def set_score_label(self, label):   # updates the score on every eating
         self.score_label = label
 
-    def set_high_score_label(self, label):
+    def set_high_score_label(self, label):   # high score label to show at game ending
         self.high_score_label = label
     
-    def set_score_saver(self, saver):
+    def set_score_saver(self, saver):  # save the ref. of score_saver function from SnakeApp class
         self.score_saver = saver
 
-    def _keyboard_closed(self):
+    def _keyboard_closed(self):  # detach keyboard 
         self._keyboard.unbind(on_key_down=self.on_key_down)
         self._keyboard = None
     
-    def on_key_down(self, keyboard, keycode, text, modifiers):
+    def on_key_down(self, keyboard, keycode, text, modifiers): # key pressing handler 
         if not self.executed: 
             return  # Too soon — ignore key
 
@@ -104,7 +104,8 @@ class GameWidget(Widget):
             self.direction = (-1, 0)
             self.executed = False
 
-    def update(self, dt):
+    def update(self, dt):  # game handling. automatically called by Clock every 0.1 seconds 
+        ''' handles snake movement, body collision, food eaten, canvas update, game ending.'''
         if self.pause:
             return
         
@@ -136,7 +137,7 @@ class GameWidget(Widget):
 
         self.update_canvas()
 
-    def update_canvas(self):
+    def update_canvas(self): # updates all graphics. background, snake and food 
         self.canvas.clear()
         with self.canvas:
             Color(162/255, 159/255, 39/255)  # Border
@@ -176,13 +177,13 @@ class GameWidget(Widget):
                 _extra = round(0.2 * self.grid_size)
                 Ellipse(pos=(self.food[0]*self.grid_size-_extra, self.food[1]*self.grid_size-_extra), size=(self.grid_size+2*_extra, self.grid_size+2*_extra))
             
-    def resume(self, dt):
+    def resume(self, dt):  # resume game with new born snake after game being over
         self.__init__local()
         self.score_label.text = f"[color=ffffff]Score: {self.score}[/color]"
         self.high_score_label.text = "[color=ffffff] [/color]"
 
-    def spawn_food(self):
-        if self.food_count > 0 and self.food_count % 6 == 0:
+    def spawn_food(self):  # creats normal food and bonus apple in every 5 steps
+        if self.food_count > 0 and self.food_count % 6 == 0: #bonus apple in every 5 steps
             # Spawn big food
             if self.apple_arival_sound:
                 self.apple_arival_sound.play()
@@ -202,12 +203,12 @@ class GameWidget(Widget):
                     break
             self.food = (fx, fy)
 
-    def check_food_collision(self, head_pos): 
-        # Check if the snake's head collides with food
-        if self.big_food:
+    def check_food_collision(self, head_pos): # Check if the snake's head collides with food
+        if self.big_food: # checks if apple is eated
             if abs(head_pos[0] - self.big_food[0]) + abs(head_pos[1] - self.big_food[1]) < 2:
                 if self.eating_sound:
                     self.eating_sound.play()
+                # 50 points when eated within 3 seconds. linearly decreased to 10 points in next 7 seconds
                 self.score += (self.full_point if (Clock.get_time() - self.big_food_start_time) < self.full_point_time_limit 
                                   else round(self.full_point - (Clock.get_time()-self.big_food_start_time-self.full_point_time_limit) *(self.full_point - self.lower_point) / (self.apple_vanish_time - self.full_point_time_limit)))
                 self.score_label.text = f"[color=ffffff]Score: {self.score}[/color]"
@@ -217,7 +218,7 @@ class GameWidget(Widget):
                 self.big_food = None
                 return True
 
-        elif self.food == head_pos:
+        elif self.food == head_pos:  # checks for normal food
             if self.eating_sound:
                 self.eating_sound.play()
             self.score += self.normal_point
@@ -226,7 +227,7 @@ class GameWidget(Widget):
             return True
         return False
     
-    def remove_big_food(self, dt):
+    def remove_big_food(self, dt): # apple 🍏 (bonus point) gets removed when not eated within 10 seconds
         if self.apple_missed_sound:
             self.apple_missed_sound.play()
         self.big_food = None
@@ -235,7 +236,7 @@ class GameWidget(Widget):
         self.spawn_food()
 
 class SnakeApp(App):
-    def build(self):
+    def build(self): # this function is called while creating a SnakeApp object. Initializes all elements of game
         self.init_db()  # Initialize database for highscores
 
         self.final_score = 0
@@ -271,10 +272,11 @@ class SnakeApp(App):
         self.game.set_score_saver(self.score_saver)
         return layout
 
-    def on_stop(self):
+    def on_stop(self):  # stores final score when game window is closed (called automatically)
         self.final_score = self.game.score
 
-    def score_saver(self):
+    def score_saver(self): # funciton to save new score and returns all 5 top scores from DB.
+        ''' this function is passed to GameWidget.set_score_saver() function. And GameWidget class uses it to handl score on game ending'''
         player_name = "Player_X" #input()  # you can use a popup or input box for name
         self.save_highscore(player_name, self.game.score)
         # Show scores
@@ -284,7 +286,7 @@ class SnakeApp(App):
             scores.append((score, name))
         return scores
     
-    def init_db(self):
+    def init_db(self):  # Initializes DB. Creates new DB if not exists 
         self.db_path = "highscores.db"
         self.conn = sqlite3.connect(self.db_path)
         self.cursor = self.conn.cursor()
@@ -296,7 +298,7 @@ class SnakeApp(App):
         ''')
         self.conn.commit()
     
-    def save_highscore(self, name, score):
+    def save_highscore(self, name, score):  # save new score to DB and then delete all except top 5
         # Insert the new score
         self.cursor.execute("INSERT INTO highscores (name, score) VALUES (?, ?)", (name, score))
         self.conn.commit()
@@ -309,7 +311,7 @@ class SnakeApp(App):
         self.cursor.executemany("INSERT INTO highscores (name, score) VALUES (?, ?)", top_5)
         self.conn.commit()
 
-    def get_highscores(self):
+    def get_highscores(self):  # returns the top 5 high scores previously saved
         self.cursor.execute("SELECT name, score FROM highscores ORDER BY score DESC LIMIT 5")
         return self.cursor.fetchall()
 
